@@ -1,0 +1,9 @@
+---
+:backends:
+  - json
+:hierarchy:
+  - "node/%{fqdn}"
+  - "environment/%{environment}"
+  - global
+:json:
+  :datadir: /etc/puppetlabs/puppet/hiera/%{environment}/
