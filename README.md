@@ -2,17 +2,18 @@
 
 This vagrant file and configs are to be used with Adrien Thebo's Vagrant Oscar plugin.
 Documentation of Oscar can be found here:
-https://github.com/adrienthebo/oscar
-https://github.com/adrienthebo/vagrant-pe_build
-https://github.com/adrienthebo/vagrant-config_builder
-https://github.com/adrienthebo/vagrant-auto_network
+
+* https://github.com/adrienthebo/oscar
+* https://github.com/adrienthebo/vagrant-pe_build
+* https://github.com/adrienthebo/vagrant-config_builder
+* https://github.com/adrienthebo/vagrant-auto_network
 
 ##Prequisites:
 
 * Virtualbox
 * GIT
 * Install Vagrant
-* Install Vagrant Oscar
+* Install Vagrant Oscar plugin
 * tar.gz of a Puppet Enterprise installer
 
 ##Getting Started:
@@ -66,7 +67,7 @@ class { 'r10k':
     }
   },
   purgedirs         => ["${::settings::confdir}/environments"],
-  manage_modulepath => true,
+  manage_modulepath => false,
   modulepath        => "${::settings::confdir}/environments/\$environment/modules:/opt/puppet/share/puppet/modules",
 }
 ```
@@ -83,6 +84,12 @@ You will also need to check your facts on the agent to verify fqdn or hostname i
 chown -R root:pe-puppet /etc/puppetlabs/puppet/environments
 chown -R root:pe-puppet /etc/puppetlabs/puppet/hiera
 
+configure puppet.conf
+```
+environmentpath = $confdir/environments
+basemodulepath = /etc/puppetlabs/puppet/modules:/opt/puppet/share/puppet/modules
+```
+
 configure /etc/puppetlabs/puppet/hiera.yaml
 
 ```
@@ -95,7 +102,6 @@ configure /etc/puppetlabs/puppet/hiera.yaml
   - global
 :json:
   :datadir: /etc/puppetlabs/puppet/hiera/%{environment}/
-# /etc/puppetlabs/puppet/hieradata/
 ```
 
 ```
@@ -104,14 +110,16 @@ service pe-puppet restart
 
 create ssh keys on your new puppet master and add them to your bitbucket/github account
 ssh-keygen -t rsa
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/id_rsa
 restart sshd after creating/adding keys
 
 verifying ssh -  ssh -vT git@bitbucket.org
 
 Tweaks to /etc/puppetlabs/puppet/puppet.conf
-Comment out modulepath under main
 
 Intall the augeas module on the master:
+// install augeasproviders first on master then perfrom the agent run on master and restart master
 puppet module install domcleal/augeasproviders --force
 puppet module install puppetlabs/mount_providers --force 
 puppet module install herculesteam/augeasproviders --force 
@@ -122,9 +130,15 @@ puppet module install herculesteam/augeasproviders_nagios --force
 puppet module install herculesteam/augeasproviders_ssh --force
 puppet module install herculesteam/augeasproviders_syslog --force
 
+puppet master --configprint libdir
+run the agent on the master
+puppet agent --test --debug 
 
-install EPEL
-rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
+restart puppet master
+service pe-puppet restart
+
+change the environment on the agent 
+restart the puppet agent 
 
 install ruby-augeas
 yum install ruby-augeas
